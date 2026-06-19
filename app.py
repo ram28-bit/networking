@@ -8,13 +8,14 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "your-secret-key-here"
 
-def ping(host):
-    """Returns True if host responds to ping, False otherwise."""
-    result = subprocess.run(
-        ["ping", "-c", "1", "-W", "2", host],
-        capture_output=True
-    )
-    return result.returncode == 0
+from ping3 import ping
+
+def check_host(host):
+    try:
+        return ping(host) is not None
+    except:
+        return False
+
 
 @app.route('/')
 def home():
@@ -60,8 +61,8 @@ def dashboard():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    google = "UP" if ping("8.8.8.8") else "DOWN"
-    cloudflare = "UP" if ping("1.1.1.1") else "DOWN"
+    google = "UP" if check_host("8.8.8.8") else "DOWN"
+    cloudflare = "UP" if check_host("1.1.1.1") else "DOWN"
 
     cpu_usage = psutil.cpu_percent(interval=1)
     memory_usage = psutil.virtual_memory().percent
@@ -95,3 +96,5 @@ import os
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+    from ping3 import ping
+print(ping("8.8.8.8"))
